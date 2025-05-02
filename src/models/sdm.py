@@ -60,8 +60,8 @@ class MaskedDiffusionModelling(pl.LightningModule):
         self.outp_dim = self.encoder.outp_dim
 
         # Keep everything tight!
-        self.encoder.do_packed = True
-        self.decoder.do_packed = True
+        #self.encoder.do_packed = True
+        #self.decoder.do_packed = True
         self.encoder.unpack_output = False
         self.decoder.unpack_output = False
 

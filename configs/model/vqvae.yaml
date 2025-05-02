@@ -3,7 +3,7 @@ _target_: src.models.vae.JetVQVAE
 encoder_config:
   dim: 128
   num_layers: 3
-  do_packed: True
+  #do_packed: True
   num_registers: 8
   do_final_norm: True
   layer_config:

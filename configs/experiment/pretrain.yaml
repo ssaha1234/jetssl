@@ -3,11 +3,11 @@
 defaults:
   # Uncomment which tasks you want to run
   ######################
-  # - /model/tasks/reg
+  - /model/tasks/reg
   # - /model/tasks/kmeans
-  # - /model/tasks/vae
-  # - /model/tasks/diff
-  # - /model/tasks/flow
+  #- /model/tasks/vae
+  #- /model/tasks/diff
+  #- /model/tasks/flow
   # - /model/tasks/id # Compliments the other tasks
   # - /model/tasks/probe # Keep this on for benchmarking
   ######################

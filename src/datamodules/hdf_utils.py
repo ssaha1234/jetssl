@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import starmap
 from pathlib import Path
 
@@ -15,7 +15,8 @@ log = logging.getLogger(__name__)
 class HDFRead:
     key: str
     dtype: type
-    s_: slice = slice(None)  # noqa: RUF009
+    #s_: slice = slice(None)  # noqa: RUF009
+    s_: slice = field(default_factory=lambda: slice(None))  # noqa: RUF009
 
 
 def make_slice(*args) -> slice:

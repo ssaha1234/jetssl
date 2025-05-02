@@ -24,13 +24,13 @@ def get_args():
     parser.add_argument(
         "--source_path",
         type=str,
-        default="/srv/beegfs/scratch/groups/rodem/datasets/btag/",
+        default="/eos/user/s/ssaha/JetSSL_Unige/jetssl/shlomi_files/",
         help="The path to the Shlomi files",
     )
     parser.add_argument(
         "--dest_path",
         type=str,
-        default="/srv/fast/share/rodem/shlomi/",
+        default="/eos/user/s/ssaha/JetSSL_Unige/jetssl/shlomi_files/",
         help="The path to save the converted files",
     )
     return parser.parse_args()

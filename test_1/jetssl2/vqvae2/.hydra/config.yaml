@@ -1,0 +1,120 @@
+seed: 42
+project_name: jetssl2
+network_name: vqvae2
+ckpt_path: null
+weight_ckpt_path: null
+precision: medium
+compile: null
+tags: null
+full_resume: false
+ckpt_flag: last.ckpt
+trainer:
+  _target_: pytorch_lightning.Trainer
+  min_epochs: 1
+  max_epochs: 9999
+  enable_progress_bar: true
+  gradient_clip_val: 1
+  precision: 16-mixed
+  check_val_every_n_epoch: 1
+  accelerator: auto
+  devices: 1
+  num_nodes: 1
+  default_root_dir: ${paths.full_path}
+  max_steps: 200000
+  val_check_interval: 10000
+model:
+  optimizer:
+    _target_: torch.optim.AdamW
+    _partial_: true
+    lr: 0.001
+    weight_decay: 1.0e-05
+  scheduler:
+    _target_: mltools.mltools.lightning_utils.linear_warmup_cosine_decay
+    _partial_: true
+    warmup_steps: 20000
+    total_steps: null
+  class_head:
+    _target_: src.models.utils.LinearHead
+    _partial_: true
+  _target_: src.models.vae.JetVQVAE
+  encoder_config:
+    dim: 128
+    num_layers: 3
+    num_registers: 8
+    do_final_norm: true
+    layer_config:
+      num_heads: 8
+      ff_mult: 2
+  quantizer_config:
+    codebook_size: 512
+    codebook_dim: 32
+    use_cosine_sim: true
+    kmeans_init: true
+    kmeans_iters: 50
+    threshold_ema_dead_code: 2
+datamodule:
+  train_set:
+    _target_: src.datamodules.hdf_stream.JetHDFStream
+    _partial_: true
+    n_classes: 10
+    path: ${paths.data_dir}/JetClassH5/train_100M_combined.h5
+  val_set:
+    _target_: src.datamodules.hdf_stream.JetHDFStream
+    _partial_: true
+    n_classes: 10
+    path: ${paths.data_dir}/JetClassH5/val_5M_combined.h5
+    n_jets: 1000000
+  test_set:
+    _target_: src.datamodules.hdf_stream.JetHDFStream
+    _partial_: true
+    n_classes: 10
+    path: ${paths.data_dir}/JetClassH5/test_20M_combined.h5
+    n_jets: 2000000
+  _target_: src.datamodules.hdf_stream.StreamModule
+  num_workers: 2
+  batch_size: 1000
+  pin_memory: true
+  transforms:
+  - _target_: src.datamodules.preprocessing.batch_masking
+    _partial_: true
+    fn:
+      _target_: src.datamodules.masking.random_masking
+      _partial_: true
+      mask_fraction: ${mask_fraction}
+  - _target_: src.datamodules.preprocessing.preprocess
+    _partial_: true
+    fn:
+      _target_: joblib.load
+      filename: ${paths.root_dir}/resources/cst_quant.joblib
+    hlv_fn:
+      _target_: joblib.load
+      filename: ${paths.root_dir}/resources/jet_quant.joblib
+loggers:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    offline: false
+    id: null
+    log_model: false
+    tags: ${tags}
+    project: ${project_name}
+    name: ${network_name}
+    save_dir: ${paths.full_path}
+    resume: ${full_resume}
+paths:
+  data_dir: /eos/home-s/ssaha/JetSSL_Unige/inputs_h5/
+  output_dir: /eos/home-s/ssaha/JetSSL_Unige/jetssl/test_1/
+  root_dir: ${oc.env:PROJECT_ROOT}
+  full_path: ${paths.output_dir}/${project_name}/${network_name}/
+callbacks:
+  checkpoint_per_epoch:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    dirpath: ${paths.full_path}/checkpoints
+    filename: last
+    enable_version_counter: false
+    auto_insert_metric_name: false
+  model_summary:
+    _target_: pytorch_lightning.callbacks.RichModelSummary
+    max_depth: 2
+  lr_monitor:
+    _target_: pytorch_lightning.callbacks.LearningRateMonitor
+    logging_interval: step

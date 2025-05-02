@@ -18,7 +18,7 @@ def get_args():
     parser.add_argument(
         "--data_path",
         type=str,
-        default="/srv/fast/share/rodem/JetClassH5/",
+        default="/eos/user/s/ssaha/JetSSL_Unige/inputs_h5/JetClassH5/train_100M_processed/",
         help="The path to the JetClass files",
     )
     return parser.parse_args()
@@ -31,12 +31,15 @@ def main() -> None:
 
     # Get the top level folders (train, val, test)
     subsets = [x for x in Path(args.data_path).iterdir() if x.is_dir()]
+    print("subsets", subsets)
     # Cycle through each subset
     for subset in subsets:
         # Skip the train set
-        if "train" in subset.name:
+        print("subset",subset)
+        if "val" in subset.name or "test" in subset.name:
             continue
-
+        
+        
         print(f"Processing {subset.name}")
 
         # Create the target file
@@ -46,6 +49,7 @@ def main() -> None:
 
         # Get a list of all files in the subset and sort
         files = list(subset.glob("*.h5"))
+        print("files",files)
 
         # Get the name of the keys from the first file
         with h5py.File(files[0], "r") as h5fr:

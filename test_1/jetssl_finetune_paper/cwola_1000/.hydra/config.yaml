@@ -1,0 +1,120 @@
+seed: 42
+project_name: jetssl_finetune_paper
+network_name: cwola_${n_jets}
+ckpt_path: null
+weight_ckpt_path: null
+precision: medium
+compile: null
+tags: null
+full_resume: false
+ckpt_flag: last.ckpt
+trainer:
+  _target_: pytorch_lightning.Trainer
+  min_epochs: 1
+  max_epochs: 10
+  enable_progress_bar: true
+  gradient_clip_val: 1
+  precision: 16-mixed
+  check_val_every_n_epoch: 10
+  accelerator: auto
+  devices: 1
+  num_nodes: 1
+  default_root_dir: ${paths.full_path}
+  max_steps: -1
+model:
+  optimizer:
+    _target_: torch.optim.AdamW
+    _partial_: true
+    lr: 0.0001
+    weight_decay: 1.0e-05
+  scheduler:
+    _target_: mltools.mltools.lightning_utils.linear_warmup_cosine_decay
+    _partial_: true
+    warmup_steps: 5000
+    total_steps: null
+  class_head:
+    _target_: mltools.mltools.transformers.ClassAttentionPooling
+    _partial_: true
+    num_layers: 2
+    dim: 128
+    layer_config:
+      num_heads: 4
+      ff_mult: 1
+      dropout: 0.2
+      layerscale_init: null
+    do_input_linear: true
+    do_output_linear: true
+  _target_: src.models.classifier.CWoLaClassifier
+  backbone_path: /srv/beegfs/scratch/groups/rodem/jetssl/jetssl_fixed/backbones/nobackbone.pkl
+datamodule:
+  train_set:
+    _target_: src.datamodules.hdf.JetCWola
+    _partial_: true
+    num_signal: ${n_jets}
+    num_background: 1000000
+    signal_process: TTBar
+    background_process: ZJetsToNuNu
+    path: ${paths.data_dir}/JetClassH5/train_100M/
+  val_set:
+    _target_: src.datamodules.hdf.JetCWola
+    _partial_: true
+    num_signal: ${n_jets}
+    num_background: 1000000
+    signal_process: TTBar
+    background_process: ZJetsToNuNu
+    path: ${paths.data_dir}/JetClassH5/val_5M/
+  test_set:
+    _target_: src.datamodules.hdf.JetCWola
+    _partial_: true
+    num_signal: ${n_jets}
+    num_background: 1000000
+    signal_process: TTBar
+    background_process: ZJetsToNuNu
+    path: ${paths.data_dir}/JetClassH5/test_20M/
+  _target_: src.datamodules.hdf.JetDataModule
+  loader_config:
+    batch_size: 500
+    num_workers: 2
+    drop_last: true
+    shuffle: true
+    collate_fn:
+      _target_: src.datamodules.preprocessing.batch_preprocess
+      _partial_: true
+      fn:
+        _target_: joblib.load
+        filename: ${paths.root_dir}/resources/cst_quant.joblib
+loggers:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    offline: false
+    id: null
+    log_model: false
+    tags: ${tags}
+    project: ${project_name}
+    name: ${network_name}
+    save_dir: ${paths.full_path}
+    resume: ${full_resume}
+paths:
+  data_dir: /eos/home-s/ssaha/JetSSL_Unige/inputs_h5/
+  output_dir: /eos/home-s/ssaha/JetSSL_Unige/jetssl/test_1/
+  root_dir: ${oc.env:PROJECT_ROOT}
+  full_path: ${paths.output_dir}/${project_name}/${network_name}/
+callbacks:
+  backbone_finetune:
+    _target_: src.models.finetuning.CatchupToLR
+    unfreeze_at_step: 5000
+    catchup_steps: 5000
+  latest_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    dirpath: ${paths.full_path}/checkpoints
+    filename: best
+    save_weights_only: true
+    auto_insert_metric_name: false
+    enable_version_counter: false
+  model_summary:
+    _target_: pytorch_lightning.callbacks.RichModelSummary
+    max_depth: 2
+  lr_monitor:
+    _target_: pytorch_lightning.callbacks.LearningRateMonitor
+    logging_interval: step
+n_jets: 1000

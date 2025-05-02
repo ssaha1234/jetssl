@@ -1,11 +1,7 @@
 import argparse
-
 import rootutils
-
 root = rootutils.setup_root(search_from=__file__, pythonpath=True)
-
 from pathlib import Path
-
 import h5py
 import numpy as np
 from tqdm import tqdm
@@ -24,13 +20,13 @@ def get_args():
     parser.add_argument(
         "--source_path",
         type=str,
-        default="/srv/beegfs/scratch/groups/rodem/anomalous_jets/data/JetClass/Pythia/",
+        default="/eos/user/s/ssaha/JetSSL_Unige/inputs_h5/JetClassH5/train_100M_part0/",
         help="The path to the JetClass files",
     )
     parser.add_argument(
         "--dest_path",
         type=str,
-        default="/srv/fast/share/rodem/JetClassH5/",
+        default="/eos/user/s/ssaha/JetSSL_Unige/inputs_h5/JetClassH5/train_100M_processed/",
         help="The path to save the converted files",
     )
     return parser.parse_args()
@@ -64,29 +60,37 @@ def main() -> None:
     # Make sure the destination path exists
     dest_path = Path(args.dest_path)
     dest_path.mkdir(parents=True, exist_ok=True)
+    print("dest_path", dest_path)
 
     # Get all of the root files in the source path
     source_path = Path(args.source_path)
+    print("source", source_path)
     subfolders = [x for x in source_path.iterdir() if x.is_dir()]
+    print("subfolders", subfolders)
 
     # Loop over the subfolders
     for subfolder in subfolders:
+        print("HELLOO", subfolder, subfolders)
         print(f"Processing {subfolder.name}")
 
         # Copy the subfolder to the destination path
         dest_folder = dest_path / subfolder.name
+        print("dest_folder", dest_folder)
 
         # Make the folder
         Path(dest_folder).mkdir(parents=True, exist_ok=True)
         files = list(subfolder.glob("*.root"))
+        print('files',files)
 
         # Sort the files based the number in the name
         files = sorted(files, key=lambda x: int(x.name.split("_")[-1].split(".")[0]))
+        
 
         # Loop through the files in the subfolder and load the information
         for file in tqdm(files):
             # Define the destination file
             dest_file = dest_path / file.name.replace(".root", ".h5")
+            print('dest_file',dest_file)
 
             # Skip if the file already exists
             # if Path(dest_file).exists():

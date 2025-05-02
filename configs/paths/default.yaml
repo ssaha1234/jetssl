@@ -1,6 +1,7 @@
 # output dir will be created by hydra
-data_dir: /srv/fast/share/rodem/
-output_dir: /srv/beegfs/scratch/groups/rodem/jetssl/
+data_dir: /eos/home-s/ssaha/JetSSL_Unige/inputs_h5/
+#output_dir: /srv/beegfs/scratch/groups/rodem/jetssl/
+output_dir: /eos/home-s/ssaha/JetSSL_Unige/jetssl/test_1/
 
 # Interpolated
 root_dir: ${oc.env:PROJECT_ROOT}
